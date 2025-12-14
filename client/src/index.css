@@ -1,0 +1,41 @@
+/* Import fonts before other rules */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #64ffda;
+  --color-secondary: #ccd6f6;
+  --color-tertiary: #8892b0;
+  --color-background: #0a192f;
+  --color-surface: #112240;
+  --color-accent: #ff0055;
+  
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
+
+
+@layer base {
+  body {
+    @apply bg-background text-secondary font-sans antialiased;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-tertiary rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary;
+}
