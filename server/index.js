@@ -65,6 +65,10 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
         });
     }
 
+    console.log(`[DEBUG] Attempting to send email via Resend...`);
+    console.log(`[DEBUG] TO_EMAIL: '${process.env.TO_EMAIL}'`);
+    console.log(`[DEBUG] RESEND_API_KEY Available: ${!!process.env.RESEND_API_KEY}`);
+
     try {
         // 1️⃣ Send notification to you
         await resend.emails.send({
