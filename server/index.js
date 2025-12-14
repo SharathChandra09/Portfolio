@@ -8,18 +8,33 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
+app.set('trust proxy', 1);
+
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://portfolio-tau-gilt-iuv15o2twm.vercel.app'
+];
+
 app.use(cors({
-    origin: [
-        "http://localhost:5173",
-        "https://portfolio-tau-gilt-iuv15o2twm.vercel.app"
-    ],
-    methods: ["GET", "POST"]
+    origin: function (origin, callback) {
+        // allow requests without origin (Postman, curl)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST'],
 }));
 
 app.use(express.json());
 
-// ---------------- RATE LIMITER ----------------
-// 5 requests per 15 minutes per IP
+/**
+ * ✅ RATE LIMITER
+ */
 const contactLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
@@ -30,16 +45,23 @@ const contactLimiter = rateLimit({
     }
 });
 
-// ---------------- MAIL TRANSPORTER ----------------
+/**
+ * ✅ SMTP CONFIG (FIXES ETIMEDOUT)
+ * Do NOT use `service: 'gmail'` on Render
+ */
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS.replace(/\s+/g, '')
     }
 });
 
-// ---------------- API ENDPOINTS ----------------
+/**
+ * ---------------- API ENDPOINTS ----------------
+ */
 app.get('/api/portfolio', (req, res) => {
     res.json(portfolioData);
 });
@@ -47,7 +69,6 @@ app.get('/api/portfolio', (req, res) => {
 app.post('/api/contact', contactLimiter, async (req, res) => {
     const { name, email, message } = req.body;
 
-    // 1️⃣ Basic validation
     if (!name || !email || !message) {
         return res.status(400).json({
             success: false,
@@ -55,7 +76,6 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
         });
     }
 
-    // 2️⃣ Email format validation (regex)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         return res.status(400).json({
@@ -64,16 +84,20 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
         });
     }
 
-    // 3️⃣ Notification email (to you)
     const notificationOptions = {
         from: process.env.EMAIL_USER,
         to: process.env.TO_EMAIL,
         subject: `Portfolio Contact: ${name}`,
-        text: `You have a new message from your portfolio!\n\nName: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+        text: `You have a new message from your portfolio!
+
+Name: ${name}
+Email: ${email}
+
+Message:
+${message}`,
         replyTo: email
     };
 
-    // 4️⃣ Auto-reply email (to user)
     const autoReplyOptions = {
         from: process.env.EMAIL_USER,
         to: email,
@@ -88,15 +112,12 @@ Sharath Chandra`
     };
 
     try {
-        // Send notification email
+        // 🔴 Blocking – must succeed
         await transporter.sendMail(notificationOptions);
 
-        // Send auto-reply (non-blocking)
-        try {
-            await transporter.sendMail(autoReplyOptions);
-        } catch (autoError) {
-            console.error("Auto-reply failed:", autoError.message);
-        }
+        // 🟢 Non-blocking – optional
+        transporter.sendMail(autoReplyOptions)
+            .catch(err => console.error("Auto-reply failed:", err.message));
 
         res.status(200).json({
             success: true,
@@ -113,5 +134,5 @@ Sharath Chandra`
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
