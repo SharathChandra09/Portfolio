@@ -84,18 +84,18 @@ ${message}`
         });
 
         // 2️⃣ Auto-reply to sender (non-blocking)
-        resend.emails.send({
-            from: 'Sharath <onboarding@resend.dev>',
-            to: email,
-            subject: 'Thanks for contacting!',
-            text: `Hi ${name},
+//         resend.emails.send({
+//             from: 'Sharath <onboarding@resend.dev>',
+//             to: email,
+//             subject: 'Thanks for contacting!',
+//             text: `Hi ${name},
 
-Thanks for reaching out through my portfolio.
-I’ve received your message and will get back to you shortly.
+// Thanks for reaching out through my portfolio.
+// I’ve received your message and will get back to you shortly.
 
-Best regards,
-Sharath`
-        }).catch(() => {});
+// Best regards,
+// Sharath`
+//         }).catch(() => {});
 
         res.status(200).json({
             success: true,
